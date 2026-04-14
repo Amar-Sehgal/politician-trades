@@ -14,7 +14,7 @@ from . import db
 
 logger = logging.getLogger(__name__)
 
-BASE_URL = "https://www.capitoltrades.com/trades"
+BASE_URL = "https://www.capitoltrades.com/trades?assetType=stock"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
     "Accept": "text/html,application/xhtml+xml",
@@ -200,23 +200,18 @@ def parse_page(html: str) -> list[dict]:
 def scrape_page(page: int, session: Optional[requests.Session] = None) -> tuple[list[dict], int]:
     """Scrape a single page. Returns (trades, total_pages)."""
     s = session or requests.Session()
-    url = f"{BASE_URL}?page={page}"
+    url = f"{BASE_URL}&page={page}"
     resp = s.get(url, headers=HEADERS, timeout=30)
     resp.raise_for_status()
 
     html = resp.text
     trades = parse_page(html)
 
-    # Extract total pages
+    # Extract total pages from pagination links (highest page= value)
     total_pages = 0
-    match = re.search(r"of\s*\*?\*?(\d[\d,]*)", html)
-    if match:
-        total_pages = int(match.group(1).replace(",", ""))
-    else:
-        # Fallback: look for pagination pattern "Page X of Y"
-        match = re.search(r"(\d[\d,]*)\s*/\s*(\d[\d,]*)", html)
-        if match:
-            total_pages = int(match.group(2).replace(",", ""))
+    page_nums = re.findall(r'page=(\d+)', html)
+    if page_nums:
+        total_pages = max(int(p) for p in page_nums)
 
     return trades, total_pages
 

@@ -25,7 +25,9 @@ def cmd_scrape(args):
         delay=args.delay,
         start_page=args.start,
     )
-    total = db.get_trade_count()
+    conn = db.get_connection()
+    total = db.get_trade_count(conn)
+    conn.close()
     print(f"\nDone. {new} new trades scraped. Total in DB: {total}")
 
 
@@ -55,7 +57,7 @@ def cmd_holdtime(args):
 def cmd_status(args):
     db.init_db()
     conn = db.get_connection()
-    trade_count = db.get_trade_count()
+    trade_count = db.get_trade_count(conn)
     price_tickers = db.get_price_count(conn)
     politicians = db.get_all_politicians(conn)
 
